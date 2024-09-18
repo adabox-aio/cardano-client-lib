@@ -62,7 +62,8 @@ public class KoiosAccountService implements com.bloxbean.cardano.client.backend.
         accountInformation.setReservesSum(accountInfo.getReserves());
         accountInformation.setTreasurySum(accountInfo.getTreasury());
         accountInformation.setWithdrawableAmount(accountInfo.getRewardsAvailable());
-        accountInformation.setPool_id(accountInfo.getDelegatedPool());
+        accountInformation.setPoolId(accountInfo.getDelegatedPool());
+        accountInformation.setDrepId(accountInfo.getDelegatedDrep());
         return Result.success("OK").withValue(accountInformation).code(200);
     }
 

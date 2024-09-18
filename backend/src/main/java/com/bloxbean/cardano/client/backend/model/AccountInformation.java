@@ -55,5 +55,10 @@ public class AccountInformation {
     /**
      * Bech32 pool ID that owns the account
      */
-    private String pool_id;
+    private String poolId;
+
+    /**
+     * Account's current delegation status to DRep ID in CIP-129 Bech32 format
+     */
+    private String drepId;
 }
