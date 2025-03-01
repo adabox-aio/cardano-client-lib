@@ -4,11 +4,11 @@ import com.bloxbean.cardano.client.account.Account;
 import com.bloxbean.cardano.client.api.UtxoSupplier;
 import com.bloxbean.cardano.client.api.model.Amount;
 import com.bloxbean.cardano.client.api.model.Result;
-import com.bloxbean.cardano.client.api.model.Utxo;
 import com.bloxbean.cardano.client.api.util.PolicyUtil;
 import com.bloxbean.cardano.client.backend.api.BackendService;
 import com.bloxbean.cardano.client.cip.cip20.MessageMetadata;
 import com.bloxbean.cardano.client.common.model.Networks;
+import com.bloxbean.cardano.client.crypto.Bech32;
 import com.bloxbean.cardano.client.exception.CborSerializationException;
 import com.bloxbean.cardano.client.function.helper.SignerProviders;
 import com.bloxbean.cardano.client.metadata.Metadata;
@@ -18,16 +18,11 @@ import com.bloxbean.cardano.client.quicktx.Tx;
 import com.bloxbean.cardano.client.transaction.spec.Asset;
 import com.bloxbean.cardano.client.transaction.spec.Policy;
 import com.bloxbean.cardano.client.util.JsonUtil;
-import com.bloxbean.cardano.hdwallet.model.WalletUtxo;
-import com.bloxbean.cardano.hdwallet.supplier.DefaultWalletUtxoSupplier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,9 +31,9 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
 
     BackendService backendService;
     UtxoSupplier utxoSupplier;
-    DefaultWalletUtxoSupplier walletUtxoSupplier;
     Wallet wallet1;
     Wallet wallet2;
+    Wallet wallet3;
 
     static Account topupAccount;
 
@@ -58,11 +53,12 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
         utxoSupplier = getUTXOSupplier();
 
         String wallet1Mnemonic = "clog book honey force cricket stamp until seed minimum margin denial kind volume undo simple federal then jealous solid legal crucial crazy acoustic thank";
-        wallet1 = new Wallet(Networks.testnet(), wallet1Mnemonic);
+        wallet1 = Wallet.createFromMnemonic(Networks.testnet(), wallet1Mnemonic);
         String wallet2Mnemonic = "theme orphan remind output arrive lobster decorate ten gap piece casual distance attend total blast dilemma damp punch pride file limit soldier plug canoe";
-        wallet2 = new Wallet(Networks.testnet(), wallet2Mnemonic);
+        wallet2 = Wallet.createFromMnemonic(Networks.testnet(), wallet2Mnemonic);
 
-        walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
+        String acctSk = "acct_xsk1azc6gn5zkdprp4gkapmhdckykphjl62rm9224699ut5z6xcaa9p4hv5hmjfgcrzk72tnsqh6dw0njekdjpsv8nv5h5hk6lpd4ag62zenwhzqs205kfurd7kgs8fm5gx4l4j8htutwj060kyp5y5kgw55qc8lsltd";
+        wallet3 = Wallet.createFromAccountKey(Networks.testnet(), Bech32.decode(acctSk).data);
     }
 
     @Test
@@ -71,15 +67,15 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
         metadata.put(BigInteger.valueOf(100), "This is first metadata");
         metadata.putNegative(200, -900);
 
+        wallet1.setSearchUtxoByAddrVkh(true);
         //topup wallet
-        splitPaymentBetweenAddress(topupAccount, wallet1, 20, Double.valueOf(50000));
+        splitPaymentBetweenAddress(topupAccount, wallet1, 20, Double.valueOf(3000), true);
 
-
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+       // UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
 
         Tx tx = new Tx()
-                .payToAddress(wallet2.getBaseAddress(0).getAddress(), Amount.ada(50000))
+                .payToAddress(wallet2.getBaseAddress(0).getAddress(), Amount.ada(2000))
                 .from(wallet1);
 
         Result<String> result = quickTxBuilder.compose(tx)
@@ -99,15 +95,14 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
     @Test
     void simplePayment_withIndexesToScan() {
         String mnemonic = "buzz sentence empty coffee manage grid claw street misery deputy direct seek tortoise wedding stay twist crew august omit taste expect obscure abandon iron";
-        Wallet wallet = new Wallet(Networks.testnet(), mnemonic);
+        Wallet wallet = Wallet.createFromMnemonic(Networks.testnet(), mnemonic);
         wallet.setIndexesToScan(new int[]{5, 30, 45});
 
         //topup index 5, 45
         topUpFund(wallet.getBaseAddressString(5), 5);
         topUpFund(wallet.getBaseAddressString(45), 15);
 
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
 
         Tx tx = new Tx()
                 .payToAddress(wallet2.getBaseAddress(0).getAddress(), Amount.ada(18))
@@ -138,8 +133,7 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
                 .attachMetadata(MessageMetadata.create().add("Minting tx"))
                 .from(wallet1);
 
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Result<String> result = quickTxBuilder.compose(tx)
                 .withSigner(SignerProviders.signerFrom(wallet1))
                 .withSigner(SignerProviders.signerFrom(policy))
@@ -152,24 +146,24 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
         checkIfUtxoAvailable(result.getValue(), wallet1.getBaseAddress(0).getAddress());
     }
 
-    @Test
-    void utxoTest() {
-        List<WalletUtxo> utxos = walletUtxoSupplier.getAll();
-        Map<String, Integer> amountMap = new HashMap<>();
-        for (Utxo utxo : utxos) {
-            int totalAmount = 0;
-            if (amountMap.containsKey(utxo.getAddress())) {
-                int amount = amountMap.get(utxo.getAddress());
-                System.out.println(utxo.getAmount().get(0));
-                totalAmount = amount + utxo.getAmount().get(0).getQuantity().intValue();
-            }
-            amountMap.put(utxo.getAddress(), totalAmount);
-        }
+//    @Test
+//    void utxoTest() {
+//        List<WalletUtxo> utxos = utxoSupplier.getAll();
+//        Map<String, Integer> amountMap = new HashMap<>();
+//        for (Utxo utxo : utxos) {
+//            int totalAmount = 0;
+//            if (amountMap.containsKey(utxo.getAddress())) {
+//                int amount = amountMap.get(utxo.getAddress());
+//                System.out.println(utxo.getAmount().get(0));
+//                totalAmount = amount + utxo.getAmount().get(0).getQuantity().intValue();
+//            }
+//            amountMap.put(utxo.getAddress(), totalAmount);
+//        }
+//
+//        assertTrue(!utxos.isEmpty());
+//    }
 
-        assertTrue(!utxos.isEmpty());
-    }
-
-    void splitPaymentBetweenAddress(Account topupAccount, Wallet receiverWallet, int totalAddresses, Double adaAmount) {
+    void splitPaymentBetweenAddress(Account topupAccount, Wallet receiverWallet, int totalAddresses, Double adaAmount, boolean enableEntAddrPayment) {
         // Create an amount array with no of totalAddresses with random distribution of split amounts
         Double[] amounts = new Double[totalAddresses];
         Double remainingAmount = adaAmount;
@@ -187,7 +181,15 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
         int currentIndex = 0;
 
         for (int i = 0; i < totalAddresses; i++) {
-            addresses[i] = receiverWallet.getBaseAddressString(currentIndex);
+            if (enableEntAddrPayment) {
+                if (i % 2 == 0)
+                    addresses[i] = receiverWallet.getBaseAddressString(currentIndex);
+                else
+                    addresses[i] = receiverWallet.getEntAddress(currentIndex).toBech32();
+            } else {
+                addresses[i] = receiverWallet.getBaseAddressString(currentIndex);
+            }
+
             currentIndex += random.nextInt(20) + 1;
         }
 
@@ -204,5 +206,34 @@ public class QuickTxBuilderIT extends QuickTxBaseIT {
                 .completeAndWait();
 
         System.out.println(result);
+    }
+
+    @Test
+    void simplePayment_fromAccountKey() {
+        Metadata metadata = MetadataBuilder.createMetadata();
+        metadata.put(BigInteger.valueOf(100), "This is first metadata");
+        metadata.putNegative(200, -900);
+
+        //topup wallet
+        splitPaymentBetweenAddress(topupAccount, wallet3, 20, Double.valueOf(3000), false);
+
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
+
+        Tx tx = new Tx()
+                .payToAddress(wallet2.getBaseAddress(0).getAddress(), Amount.ada(2000))
+                .from(wallet3);
+
+        Result<String> result = quickTxBuilder.compose(tx)
+                .withSigner(SignerProviders.signerFrom(wallet3))
+                .withTxInspector(txn -> {
+                    System.out.println(JsonUtil.getPrettyJson(txn));
+                })
+                .complete();
+
+        System.out.println(result);
+        assertTrue(result.isSuccessful());
+        waitForTransaction(result);
+
+        checkIfUtxoAvailable(result.getValue(), wallet2.getBaseAddress(0).getAddress());
     }
 }

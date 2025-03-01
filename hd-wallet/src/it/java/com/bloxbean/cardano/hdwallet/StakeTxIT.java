@@ -20,8 +20,6 @@ import com.bloxbean.cardano.client.quicktx.QuickTxBuilder;
 import com.bloxbean.cardano.client.quicktx.ScriptTx;
 import com.bloxbean.cardano.client.quicktx.Tx;
 import com.bloxbean.cardano.client.util.JsonUtil;
-import com.bloxbean.cardano.hdwallet.supplier.DefaultWalletUtxoSupplier;
-import com.bloxbean.cardano.hdwallet.supplier.WalletUtxoSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 
@@ -31,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StakeTxIT extends QuickTxBaseIT {
     static BackendService backendService;
     static UtxoSupplier utxoSupplier;
-    static WalletUtxoSupplier walletUtxoSupplier;
     static Wallet wallet1;
     static Wallet wallet2;
 
@@ -59,9 +56,9 @@ public class StakeTxIT extends QuickTxBaseIT {
         quickTxBuilder = new QuickTxBuilder(backendService);
 
         String wallet1Mnemonic = "clog book honey force cricket stamp until seed minimum margin denial kind volume undo simple federal then jealous solid legal crucial crazy acoustic thank";
-        wallet1 = new Wallet(Networks.testnet(), wallet1Mnemonic);
+        wallet1 = Wallet.createFromMnemonic(Networks.testnet(), wallet1Mnemonic);
         String wallet2Mnemonic = "theme orphan remind output arrive lobster decorate ten gap piece casual distance attend total blast dilemma damp punch pride file limit soldier plug canoe";
-        wallet2 = new Wallet(Networks.testnet(), wallet2Mnemonic);
+        wallet2 = Wallet.createFromMnemonic(Networks.testnet(), wallet2Mnemonic);
 
         if (backendType.equals(DEVKIT)) {
             poolId = "pool1wvqhvyrgwch4jq9aa84hc8q4kzvyq2z3xr6mpafkqmx9wce39zy";
@@ -82,8 +79,7 @@ public class StakeTxIT extends QuickTxBaseIT {
         //De-register all stake addresses if required
         _deRegisterStakeKeys();
 
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Tx tx = new Tx()
                 .payToAddress(wallet1.getBaseAddressString(1), Amount.ada(1.5))
                 .payToAddress(wallet2.getBaseAddressString(1), Amount.ada(2.5))
@@ -107,8 +103,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     @Test
     @Order(2)
     void stakeAddressDeRegistration() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1); // TODO WalletUTXOSupplier only works with one wallet - Is it a problem?
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Tx tx = new Tx()
                 .payToAddress(wallet1.getBaseAddressString(1), Amount.ada(1.5))
                 .payToAddress(wallet1.getBaseAddressString(0), Amount.ada(4.0))
@@ -131,8 +126,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     @Test
     @Order(3)
     void stakeAddressRegistration_onlyRegistration() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Tx tx = new Tx()
                 .registerStakeAddress(wallet1)
                 .attachMetadata(MessageMetadata.create().add("This is a stake registration tx"))
@@ -152,8 +146,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     @Test
     @Order(4)
     void stakeAddressDeRegistration_onlyRegistration() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Tx tx = new Tx()
                 .deregisterStakeAddress(wallet1)
                 .attachMetadata(MessageMetadata.create().add("This is a stake deregistration tx"))
@@ -175,8 +168,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     @Order(5)
     void scriptStakeAddress_registration() {
 //        deregisterScriptsStakeKeys();
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         Tx tx = new Tx()
                 .registerStakeAddress(scriptStakeAddress1)
                 .attachMetadata(MessageMetadata.create().add("This is a script stake registration tx"))
@@ -196,8 +188,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     @Test
     @Order(6)
     void scriptStakeAddress_deRegistration() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
         ScriptTx tx = new ScriptTx()
                 .deregisterStakeAddress(scriptStakeAddress1, BigIntPlutusData.of(1))
                 .attachMetadata(MessageMetadata.create().add("This is a script stake address deregistration tx"))
@@ -222,8 +213,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     void stakeDelegation_scriptStakeKeys() {
         registerScriptsStakeKeys();
 
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
 
         //Delegation
         ScriptTx delegTx = new ScriptTx()
@@ -248,8 +238,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     }
 
     private void registerScriptsStakeKeys() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
 
         //stake Registration
         Tx tx = new Tx()
@@ -289,8 +278,7 @@ public class StakeTxIT extends QuickTxBaseIT {
     }
 
     private Result<String> _deRegisterStakeKeys() {
-        UtxoSupplier walletUtxoSupplier = new DefaultWalletUtxoSupplier(backendService.getUtxoService(), wallet1);
-        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, walletUtxoSupplier);
+        QuickTxBuilder quickTxBuilder = new QuickTxBuilder(backendService, utxoSupplier);
 
         //stake Registration
         Tx tx = new Tx()
