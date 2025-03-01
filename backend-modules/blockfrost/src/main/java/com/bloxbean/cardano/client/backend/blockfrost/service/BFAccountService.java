@@ -143,6 +143,17 @@ public class BFAccountService extends BFBaseService implements AccountService {
     }
 
     @Override
+    public Result<AccountAddressTotal> getAccountAddressTotal(String stakeAddress) throws ApiException {
+        Call<AccountAddressTotal> call = accountApi.getAccountAddressTotal(getProjectId(), stakeAddress);
+        try {
+            Response<AccountAddressTotal> response = call.execute();
+            return processResponse(response);
+        } catch (IOException e) {
+            throw new ApiException("Error getting accountInformation", e);
+        }
+    }
+
+    @Override
     public Result<List<AddressTransactionContent>> getAccountTransactions(String stakeAddress, int count, int page, OrderEnum order, Integer fromBlockHeight, Integer toBlockHeight) throws ApiException {
         Result<List<AccountAddress>> accountAddressesResult = getAllAccountAddresses(stakeAddress);
         if (accountAddressesResult.isSuccessful()) {

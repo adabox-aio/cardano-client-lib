@@ -1,12 +1,14 @@
 package com.bloxbean.cardano.client.backend.kupo;
 
 import com.bloxbean.cardano.client.api.common.OrderEnum;
+import com.bloxbean.cardano.client.api.exception.ApiException;
 import com.bloxbean.cardano.client.api.model.Result;
 import com.bloxbean.cardano.client.api.model.Utxo;
 import com.bloxbean.cardano.client.backend.api.UtxoService;
 import com.bloxbean.cardano.client.supplier.kupo.KupoUtxoSupplier;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,29 @@ public class KupoUtxoService implements UtxoService {
     @Override
     public Result<List<Utxo>> getUtxos(String address, int count, int page, OrderEnum order) {
         return getUtxos(address, count, page);
+    }
+
+    @Override
+    public Result<List<Utxo>> getAllUtxos(String address) throws ApiException {
+        int count = 100;
+        int page = 1;
+        List<Utxo> allUtxos = new ArrayList<>();
+        while (true) {
+            Result<List<Utxo>> result = getUtxos(address, count, page, OrderEnum.asc);
+            if (!result.isSuccessful()) {
+                return result;
+            }
+            List<Utxo> utxos = result.getValue();
+            if (utxos == null || utxos.isEmpty()) {
+                break;
+            }
+            allUtxos.addAll(utxos);
+            if (utxos.size() < count) {
+                break;
+            }
+            page++;
+        }
+        return Result.success("OK").withValue(allUtxos).code(200);
     }
 
     @Override

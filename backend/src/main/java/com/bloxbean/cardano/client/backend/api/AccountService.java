@@ -121,6 +121,8 @@ public interface AccountService {
      */
     Result<List<AccountAsset>> getAccountAssets(String stakeAddress, int count, int page, OrderEnum order) throws ApiException;
 
+    Result<AccountAddressTotal> getAccountAddressTotal(String stakeAddress) throws ApiException;
+
     /**
      * Obtain information about transactions associated with a specific account.
      * @param stakeAddress Bech32 stake address.

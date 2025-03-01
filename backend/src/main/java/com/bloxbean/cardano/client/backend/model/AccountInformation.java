@@ -23,6 +23,11 @@ public class AccountInformation {
     private Boolean active;
 
     /**
+     * Epoch of the most recent action - registration or deregistration
+     */
+    private Integer activeEpoch;
+
+    /**
      * Balance of the account in Lovelaces
      */
     private String controlledAmount;

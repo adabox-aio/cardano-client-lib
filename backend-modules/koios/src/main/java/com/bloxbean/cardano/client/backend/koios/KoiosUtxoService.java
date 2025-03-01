@@ -72,6 +72,29 @@ public class KoiosUtxoService implements UtxoService {
     }
 
     @Override
+    public Result<List<Utxo>> getAllUtxos(String address) throws ApiException {
+        int count = 1000;
+        int page = 1;
+        List<Utxo> allUtxos = new ArrayList<>();
+        while (true) {
+            Result<List<Utxo>> result = getUtxos(address, count, page, OrderEnum.asc);
+            if (!result.isSuccessful()) {
+                return result;
+            }
+            List<Utxo> utxos = result.getValue();
+            if (utxos == null || utxos.isEmpty()) {
+                break;
+            }
+            allUtxos.addAll(utxos);
+            if (utxos.size() < count) {
+                break;
+            }
+            page++;
+        }
+        return Result.success("OK").withValue(allUtxos).code(200);
+    }
+
+    @Override
     public Result<List<Utxo>> getUtxos(String address, String unit, int count, int page) throws ApiException {
         return getUtxos(address, unit, count, page, OrderEnum.asc);
     }

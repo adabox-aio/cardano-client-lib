@@ -28,10 +28,11 @@ import static java.util.stream.Collectors.groupingBy;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Utxo {
 
+    private String address;
     private String txHash;
     private int outputIndex;
-    private String address;
     private List<Amount> amount;
+    private String block;
     private String dataHash;
     private String inlineDatum;
     private String referenceScriptHash;

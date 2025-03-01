@@ -195,6 +195,16 @@ public class KoiosTransactionService implements TransactionService {
     }
 
     @Override
+    public Result<List<TxContentDelegation>> getDelegationCertificates(String txnHash) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Result<List<TxContentWithdrawal>> getTransactionWithdrawals(String txnHash) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public Result<List<TxContentRedeemers>> getTransactionRedeemers(String txnHash) throws ApiException {
         try {
             rest.koios.client.backend.api.base.Result<TxInfo> txInfoResult = transactionsService.getTransactionInformation(txnHash);
@@ -240,7 +250,11 @@ public class KoiosTransactionService implements TransactionService {
             for (Asset txAsset : txIO.getAssetList()) {
                 txContentOutputAmountList.add(new TxContentOutputAmount(txAsset.getPolicyId() + txAsset.getAssetName(), txAsset.getQuantity()));
             }
-            inputs.add(new TxContentUtxoInputs(txIO.getPaymentAddr().getBech32(), txContentOutputAmountList));
+            inputs.add(new TxContentUtxoInputs(txIO.getPaymentAddr().getBech32(), txContentOutputAmountList,
+                    txIO.getTxHash(), txIO.getTxIndex(), txIO.getDatumHash(),
+                    txIO.getInlineDatum().getValue().toString(),
+                    txIO.getReferenceScript() != null ? txIO.getReferenceScript().getHash() : null, null,
+                    txIO.getReferenceScript() != null));
         }
         if (!inputs.isEmpty()) {
             txContentUtxo.setInputs(inputs);

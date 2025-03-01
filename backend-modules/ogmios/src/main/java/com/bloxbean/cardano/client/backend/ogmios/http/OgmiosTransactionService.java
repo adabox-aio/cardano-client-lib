@@ -5,9 +5,7 @@ import com.bloxbean.cardano.client.api.model.EvaluationResult;
 import com.bloxbean.cardano.client.api.model.Result;
 import com.bloxbean.cardano.client.api.model.Utxo;
 import com.bloxbean.cardano.client.backend.api.TransactionService;
-import com.bloxbean.cardano.client.backend.model.TransactionContent;
-import com.bloxbean.cardano.client.backend.model.TxContentRedeemers;
-import com.bloxbean.cardano.client.backend.model.TxContentUtxo;
+import com.bloxbean.cardano.client.backend.model.*;
 
 import com.bloxbean.cardano.client.supplier.ogmios.OgmiosTransactionProcessor;
 
@@ -38,6 +36,16 @@ public class OgmiosTransactionService implements TransactionService {
 
     @Override
     public Result<TxContentUtxo> getTransactionUtxos(String txnHash) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Result<List<TxContentDelegation>> getDelegationCertificates(String txnHash) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Result<List<TxContentWithdrawal>> getTransactionWithdrawals(String txnHash) throws ApiException {
         throw new UnsupportedOperationException("Not supported yet");
     }
 

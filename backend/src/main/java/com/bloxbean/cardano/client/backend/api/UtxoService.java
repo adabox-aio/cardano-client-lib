@@ -31,6 +31,14 @@ public interface UtxoService {
     Result<List<Utxo>> getUtxos(String address, int count, int page, OrderEnum order) throws ApiException;
 
     /**
+     *
+     * @param address
+     * @return
+     * @throws ApiException
+     */
+    Result<List<Utxo>> getAllUtxos(String address) throws ApiException;
+
+    /**
      * Fetch Utxos for a given address and asset
      * @param address Address
      * @param unit Asset unit

@@ -29,4 +29,7 @@ public interface AccountApi {
     @GET("accounts/{stake_address}/addresses/assets")
     Call<List<AccountAsset>> getAccountAssets(@Header("project_id") String projectId, @Path("stake_address") String stakeAddress,
                                               @Query("count") int count, @Query("page") int page, @Query("order") String order);
+
+    @GET("accounts/{stake_address}/addresses/total")
+    Call<AccountAddressTotal> getAccountAddressTotal(@Header("project_id") String projectId, @Path("stake_address") String stakeAddress);
 }

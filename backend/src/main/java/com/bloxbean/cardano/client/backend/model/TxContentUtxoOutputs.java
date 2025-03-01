@@ -31,7 +31,9 @@ public class TxContentUtxoOutputs {
     private int outputIndex;
     private String dataHash;
     private String inlineDatum;
+    private Boolean collateral;
     private String referenceScriptHash;
+    private String consumedByTx;
 
     public Utxo toUtxos(String txHash) {
         Utxo utxo = new Utxo();

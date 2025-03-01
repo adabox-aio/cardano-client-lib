@@ -255,6 +255,11 @@ public class KoiosAccountService implements com.bloxbean.cardano.client.backend.
     }
 
     @Override
+    public Result<AccountAddressTotal> getAccountAddressTotal(String stakeAddress) throws ApiException {
+        return null;
+    }
+
+    @Override
     public Result<List<AddressTransactionContent>> getAccountTransactions(String stakeAddress, int count, int page, OrderEnum order, Integer fromBlockHeight, Integer toBlockHeight) throws ApiException {
         try {
             Options options = Options.builder()

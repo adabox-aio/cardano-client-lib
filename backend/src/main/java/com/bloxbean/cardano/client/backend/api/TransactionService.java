@@ -4,10 +4,7 @@ import com.bloxbean.cardano.client.api.exception.ApiException;
 import com.bloxbean.cardano.client.api.model.Result;
 import com.bloxbean.cardano.client.api.model.Utxo;
 import com.bloxbean.cardano.client.api.model.EvaluationResult;
-import com.bloxbean.cardano.client.backend.model.TransactionContent;
-import com.bloxbean.cardano.client.backend.model.TxContentRedeemers;
-import com.bloxbean.cardano.client.backend.model.TxContentUtxo;
-import com.bloxbean.cardano.client.backend.model.TxContentUtxoOutputs;
+import com.bloxbean.cardano.client.backend.model.*;
 import com.bloxbean.cardano.client.util.JsonUtil;
 
 import java.util.List;
@@ -51,6 +48,26 @@ public interface TransactionService {
     Result<TxContentUtxo> getTransactionUtxos(String txnHash) throws ApiException;
 
     /**
+     * Transaction delegation certificates
+     * Obtain information about delegation certificates of a specific transaction.
+     *
+     * @param txnHash Hash of the requested transaction.
+     * @return Transaction Delegation Certificates
+     * @throws ApiException
+     */
+    Result<List<TxContentDelegation>> getDelegationCertificates(String txnHash) throws ApiException;
+
+    /**
+     * Transaction withdrawal
+     * Obtain information about withdrawals of a specific transaction.
+     *
+     * @param txnHash Hash of the requested transaction.
+     * @return Transaction Withdrawal
+     * @throws ApiException
+     */
+    Result<List<TxContentWithdrawal>> getTransactionWithdrawals(String txnHash) throws ApiException;
+
+    /**
      * getTransactionRedeemers
      *
      * @param txnHash txnHash
@@ -61,7 +78,8 @@ public interface TransactionService {
 
     /**
      * Get transaction output at given index for a transaction hash
-     * @param txnHash Transaction hash
+     *
+     * @param txnHash     Transaction hash
      * @param outputIndex Output index
      * @return Utxo
      * @throws ApiException If any error occurs

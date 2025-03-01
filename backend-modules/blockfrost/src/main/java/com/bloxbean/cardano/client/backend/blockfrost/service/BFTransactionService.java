@@ -5,9 +5,7 @@ import com.bloxbean.cardano.client.api.model.Result;
 import com.bloxbean.cardano.client.backend.api.TransactionService;
 import com.bloxbean.cardano.client.backend.blockfrost.service.http.TransactionApi;
 import com.bloxbean.cardano.client.api.model.EvaluationResult;
-import com.bloxbean.cardano.client.backend.model.TransactionContent;
-import com.bloxbean.cardano.client.backend.model.TxContentRedeemers;
-import com.bloxbean.cardano.client.backend.model.TxContentUtxo;
+import com.bloxbean.cardano.client.backend.model.*;
 import com.bloxbean.cardano.client.util.HexUtil;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -19,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BFTransactionService extends BFBaseService implements TransactionService {
+
     private TransactionApi transactionApi;
 
     public BFTransactionService(String baseUrl, String projectId) {
@@ -75,9 +74,30 @@ public class BFTransactionService extends BFBaseService implements TransactionSe
         try {
             Response<TxContentUtxo> response = txnCall.execute();
             return processResponse(response);
-
         } catch (IOException e) {
             throw new ApiException("Error getting transaction utxos for id : " + txnHash, e);
+        }
+    }
+
+    @Override
+    public Result<List<TxContentDelegation>> getDelegationCertificates(String txnHash) throws ApiException {
+        Call<List<TxContentDelegation>> txnCall = transactionApi.getDelegationCertificates(getProjectId(), txnHash);
+        try {
+            Response<List<TxContentDelegation>> response = txnCall.execute();
+            return processResponse(response);
+        } catch (IOException e) {
+            throw new ApiException("Error getting transaction delegation certificates for hash: " + txnHash, e);
+        }
+    }
+
+    @Override
+    public Result<List<TxContentWithdrawal>> getTransactionWithdrawals(String txnHash) throws ApiException {
+        Call<List<TxContentWithdrawal>> txnCall = transactionApi.getTransactionWithdrawals(getProjectId(), txnHash);
+        try {
+            Response<List<TxContentWithdrawal>> response = txnCall.execute();
+            return processResponse(response);
+        } catch (IOException e) {
+            throw new ApiException("Error getting transaction withdrawals for hash: " + txnHash, e);
         }
     }
 
@@ -87,7 +107,6 @@ public class BFTransactionService extends BFBaseService implements TransactionSe
         try {
             Response<List<TxContentRedeemers>> response = txnCall.execute();
             return processResponse(response);
-
         } catch (IOException e) {
             throw new ApiException("Error getting transaction redeemers for id : " + txnHash, e);
         }
