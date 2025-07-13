@@ -8,14 +8,16 @@ import com.bloxbean.cardano.client.plutus.spec.RedeemerTag;
 import org.apache.commons.collections4.ListUtils;
 import rest.koios.client.backend.api.base.common.Asset;
 import rest.koios.client.backend.api.transactions.TransactionsService;
-import rest.koios.client.backend.api.transactions.model.TxCertificate;
-import rest.koios.client.backend.api.transactions.model.TxIO;
-import rest.koios.client.backend.api.transactions.model.TxInfo;
-import rest.koios.client.backend.api.transactions.model.TxPlutusContract;
+import rest.koios.client.backend.api.transactions.model.*;
+import rest.koios.client.backend.factory.options.Options;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 
 import static com.bloxbean.cardano.client.common.CardanoConstants.LOVELACE;
 
@@ -90,18 +92,88 @@ public class KoiosTransactionService implements TransactionService {
         return Result.success("OK").withValue(result).code(200);
     }
 
+    @Override
+    public Result<TransactionCbor> getTransactionCbor(String txnHash) throws ApiException {
+        Result<List<TransactionCbor>> txsCborResult = getTransactionsCbor(List.of(txnHash));
+        if (!txsCborResult.isSuccessful()) {
+            return Result.error(txsCborResult.getResponse()).code(txsCborResult.code());
+        }
+
+        if (!txsCborResult.getValue().isEmpty()) {
+            return Result.success("OK").withValue(txsCborResult.getValue().get(0)).code(200);
+        } else {
+            return Result.error("Not Found").code(404);
+        }
+    }
+
+    @Override
+    public Result<List<TransactionCbor>> getTransactionsCbor(List<String> txnHashes) throws ApiException {
+        try {
+            CompletableFuture<rest.koios.client.backend.api.base.Result<List<RawTx>>> rawTxFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return transactionsService.getRawTransaction(txnHashes, Options.EMPTY);
+                        } catch (rest.koios.client.backend.api.base.exception.ApiException e) {
+                            throw new CompletionException(e);
+                        }
+                    });
+            CompletableFuture<rest.koios.client.backend.api.base.Result<List<TxInfo>>> txInfoFuture =
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return transactionsService.getTransactionInformation(txnHashes, true, false, true, false, false, false, false, Options.EMPTY);
+                        } catch (rest.koios.client.backend.api.base.exception.ApiException e) {
+                            throw new CompletionException(e);
+                        }
+                    });
+            CompletableFuture.allOf(rawTxFuture, txInfoFuture).join();
+            var txsCborResult = rawTxFuture.join();
+            var txsInfoResult = txInfoFuture.join();
+            if (!txsCborResult.isSuccessful()) {
+                return Result.error(txsCborResult.getResponse()).code(txsCborResult.getCode());
+            }
+            if (!txsInfoResult.isSuccessful()) {
+                return Result.error(txsInfoResult.getResponse()).code(txsInfoResult.getCode());
+            }
+            Map<String, TxInfo> txInfoMap = txsInfoResult.getValue().stream()
+                    .collect(Collectors.toMap(TxInfo::getTxHash, txInfo -> txInfo));
+            List<TransactionCbor> transactionCbors = txsCborResult.getValue().stream()
+                    .map(rawTx -> convertToTransactionCbor(rawTx, txInfoMap.get(rawTx.getTxHash())))
+                    .collect(Collectors.toList());
+            if (transactionCbors.isEmpty()) {
+                return Result.error("Not Found").code(404);
+            }
+            return Result.success("OK").withValue(transactionCbors).code(200);
+        } catch (Exception e) {
+            throw new ApiException(e.getMessage(), e);
+        }
+    }
+
+    private TransactionCbor convertToTransactionCbor(RawTx rawTx, TxInfo txInfo) {
+        return TransactionCbor.builder()
+                .utxo(convertToTxContentUtxo(txInfo))
+                .txHash(rawTx.getTxHash())
+                .blockHash(rawTx.getBlockHash())
+                .blockHeight(rawTx.getBlockHeight())
+                .epochNo(rawTx.getEpochNo())
+                .absoluteSlot(rawTx.getAbsoluteSlot())
+                .txTimestamp(rawTx.getTxTimestamp())
+                .txSize(txInfo.getTxSize())
+                .cbor(rawTx.getCbor())
+                .build();
+    }
+
     private TransactionContent convertToTransactionContent(TxInfo txInfo) {
         TransactionContent transactionContent = new TransactionContent();
         transactionContent.setHash(txInfo.getTxHash());
         transactionContent.setBlock(txInfo.getBlockHash());
         if (txInfo.getBlockHeight() != null) {
-            transactionContent.setBlockHeight(txInfo.getBlockHeight().longValue());
+            transactionContent.setBlockHeight(txInfo.getBlockHeight());
         }
         if (txInfo.getTxTimestamp() != null) {
-            transactionContent.setBlockTime(txInfo.getTxTimestamp().longValue());
+            transactionContent.setBlockTime(txInfo.getTxTimestamp());
         }
         if (txInfo.getAbsoluteSlot() != null) {
-            transactionContent.setSlot(txInfo.getAbsoluteSlot().longValue());
+            transactionContent.setSlot(txInfo.getAbsoluteSlot());
         }
         transactionContent.setIndex(txInfo.getTxBlockIndex());
         List<TxOutputAmount> txOutputAmountList = new ArrayList<>();
@@ -188,7 +260,7 @@ public class KoiosTransactionService implements TransactionService {
             if (!txInfoResult.isSuccessful()) {
                 return Result.error(txInfoResult.getResponse()).code(txInfoResult.getCode());
             }
-            return convertToTxContentUtxo(txInfoResult.getValue());
+            return Result.success("OK").withValue(convertToTxContentUtxo(txInfoResult.getValue())).code(200);
         } catch (rest.koios.client.backend.api.base.exception.ApiException e) {
             throw new ApiException(e.getMessage(), e);
         }
@@ -238,9 +310,9 @@ public class KoiosTransactionService implements TransactionService {
         return Result.success("OK").withValue(txContentRedeemersList).code(200);
     }
 
-    private Result<TxContentUtxo> convertToTxContentUtxo(TxInfo txInfo) {
+    private TxContentUtxo convertToTxContentUtxo(TxInfo txInfo) {
         TxContentUtxo txContentUtxo = new TxContentUtxo();
-        //Inputs
+        // Inputs
         List<TxContentUtxoInputs> inputs = new ArrayList<>();
         for (TxIO txIO : txInfo.getInputs()) {
             List<TxContentOutputAmount> txContentOutputAmountList = new ArrayList<>();
@@ -250,16 +322,21 @@ public class KoiosTransactionService implements TransactionService {
             for (Asset txAsset : txIO.getAssetList()) {
                 txContentOutputAmountList.add(new TxContentOutputAmount(txAsset.getPolicyId() + txAsset.getAssetName(), txAsset.getQuantity()));
             }
-            inputs.add(new TxContentUtxoInputs(txIO.getPaymentAddr().getBech32(), txContentOutputAmountList,
-                    txIO.getTxHash(), txIO.getTxIndex(), txIO.getDatumHash(),
-                    txIO.getInlineDatum().getValue().toString(),
-                    txIO.getReferenceScript() != null ? txIO.getReferenceScript().getHash() : null, null,
+            inputs.add(new TxContentUtxoInputs(
+                    txIO.getPaymentAddr().getBech32(),
+                    txContentOutputAmountList,
+                    txIO.getTxHash(),
+                    txIO.getTxIndex(),
+                    txIO.getDatumHash(),
+                    txIO.getInlineDatum() != null ? txIO.getInlineDatum().getValue().toString() : null,
+                    txIO.getReferenceScript() != null ? txIO.getReferenceScript().getHash() : null,
+                    null,
                     txIO.getReferenceScript() != null));
         }
         if (!inputs.isEmpty()) {
             txContentUtxo.setInputs(inputs);
         }
-        //Outputs
+        // Outputs
         List<TxContentUtxoOutputs> outputs = new ArrayList<>();
         for (TxIO txIO : txInfo.getOutputs()) {
             List<TxContentOutputAmount> txContentOutputAmountList = new ArrayList<>();
@@ -275,12 +352,12 @@ public class KoiosTransactionService implements TransactionService {
                     .amount(txContentOutputAmountList)
                     .dataHash(txIO.getDatumHash())
                     .outputIndex(txIO.getTxIndex())
-                    .inlineDatum(txIO.getInlineDatum() != null? txIO.getInlineDatum().getBytes(): null)
+                    .inlineDatum(txIO.getInlineDatum() != null ? txIO.getInlineDatum().getBytes(): null)
                     .referenceScriptHash(txIO.getReferenceScript() != null? txIO.getReferenceScript().getHash(): null)
                     .build();
             outputs.add(txContentUtxoOutputs);
         }
         txContentUtxo.setOutputs(outputs);
-        return Result.success("OK").withValue(txContentUtxo).code(200);
+        return txContentUtxo;
     }
 }

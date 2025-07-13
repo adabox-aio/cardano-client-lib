@@ -35,6 +35,16 @@ public class OgmiosTransactionService implements TransactionService {
     }
 
     @Override
+    public Result<TransactionCbor> getTransactionCbor(String txnHash) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public Result<List<TransactionCbor>> getTransactionsCbor(List<String> txnHashes) throws ApiException {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public Result<TxContentUtxo> getTransactionUtxos(String txnHash) throws ApiException {
         throw new UnsupportedOperationException("Not supported yet");
     }

@@ -223,7 +223,7 @@ public class KoiosEpochService implements EpochService {
 
         LinkedHashMap<String, LinkedHashMap<String, Long>> res = new LinkedHashMap<>();
         try {
-            LinkedHashMap<String, List<Long>> result = objectMapper.readValue(costModelsJson, new TypeReference<LinkedHashMap<String, List<Long>>>() {});
+            LinkedHashMap<String, List<Long>> result = objectMapper.readValue(costModelsJson, new TypeReference<>() {});
             final AtomicInteger plutusV1IndexHolder = new AtomicInteger();
             LinkedHashMap<String, Long> plutusV1CostModelsMap = new LinkedHashMap<>();
             final AtomicInteger plutusV2IndexHolder = new AtomicInteger();

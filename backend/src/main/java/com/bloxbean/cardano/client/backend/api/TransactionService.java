@@ -39,6 +39,26 @@ public interface TransactionService {
     Result<List<TransactionContent>> getTransactions(List<String> txnHashCollection) throws ApiException;
 
     /**
+     * Transaction CBOR
+     * Obtain the CBOR serialized transaction
+     *
+     * @param txnHash Tx Id
+     * @return CBOR serialized transaction in hex
+     * @throws ApiException
+     */
+    Result<TransactionCbor> getTransactionCbor(String txnHash) throws ApiException;
+
+    /**
+     * Transactions CBOR
+     * Obtain the list of CBOR serialized transaction
+     *
+     * @param txnHashes Collection of TX Ids
+     * @return CBOR serialized transactions in hex
+     * @throws ApiException
+     */
+    Result<List<TransactionCbor>> getTransactionsCbor(List<String> txnHashes) throws ApiException;
+
+    /**
      * getTransactionUtxos
      *
      * @param txnHash txnHash

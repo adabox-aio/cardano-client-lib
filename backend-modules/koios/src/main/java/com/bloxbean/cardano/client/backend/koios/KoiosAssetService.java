@@ -10,8 +10,10 @@ import com.bloxbean.cardano.client.backend.model.AssetAddress;
 import com.bloxbean.cardano.client.backend.model.AssetTransactionContent;
 import com.bloxbean.cardano.client.backend.model.PolicyAsset;
 import com.bloxbean.cardano.client.util.Tuple;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import rest.koios.client.backend.api.asset.model.AssetInformation;
 import rest.koios.client.backend.api.base.common.UTxO;
 import rest.koios.client.backend.factory.options.Limit;
@@ -20,6 +22,7 @@ import rest.koios.client.backend.factory.options.Options;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Koios Asset Service
@@ -49,13 +52,41 @@ public class KoiosAssetService implements AssetService {
             if (!assetInformation.isSuccessful()) {
                 return Result.error(assetInformation.getResponse()).code(assetInformation.getCode());
             }
-            return convertToAsset(assetInformation.getValue());
+            return Result.success("OK").withValue(convertToAsset(assetInformation.getValue())).code(200);
+        } catch (rest.koios.client.backend.api.base.exception.ApiException | JsonProcessingException e) {
+            throw new ApiException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Result<List<Asset>> getAssetInformationBulk(List<String> units) throws ApiException {
+        try {
+            List<rest.koios.client.utils.Tuple<String, String>> assetTuples = units.stream().map(unit -> {
+                Tuple<String, String> assetTuple = AssetUtil.getPolicyIdAndAssetName(unit);
+                return new rest.koios.client.utils.Tuple<>(assetTuple._1, assetTuple._2.replace("0x", ""));
+            }).collect(Collectors.toList());
+            rest.koios.client.backend.api.base.Result<List<AssetInformation>> assetInformation = assetService.getAssetInformationBulk(assetTuples, Options.EMPTY);
+            if (!assetInformation.isSuccessful()) {
+                return Result.error(assetInformation.getResponse()).code(assetInformation.getCode());
+            }
+            List<Asset> assets = new ArrayList<>();
+            List<AssetInformation> assetInfoList = assetInformation.getValue();
+            if (assetInfoList != null && !assetInfoList.isEmpty()) {
+                for (AssetInformation assetInfo : assetInfoList) {
+                    try {
+                        assets.add(convertToAsset(assetInfo));
+                    } catch (JsonProcessingException e) {
+                        throw new rest.koios.client.backend.api.base.exception.ApiException("Failed Parsing Asset Information: "+e.getMessage());
+                    }
+                }
+            }
+            return Result.success("OK").withValue(assets).code(200);
         } catch (rest.koios.client.backend.api.base.exception.ApiException e) {
             throw new ApiException(e.getMessage(), e);
         }
     }
 
-    private Result<Asset> convertToAsset(AssetInformation assetInformation) {
+    private Asset convertToAsset(AssetInformation assetInformation) throws JsonProcessingException {
         Asset asset = new Asset();
         asset.setAsset(assetInformation.getPolicyId() + assetInformation.getAssetName());
         asset.setPolicyId(assetInformation.getPolicyId());
@@ -70,7 +101,11 @@ public class KoiosAssetService implements AssetService {
         if (assetInformation.getTokenRegistryMetadata() != null) {
             asset.setMetadata(objectMapper.convertValue(assetInformation.getTokenRegistryMetadata(), JsonNode.class));
         }
-        return Result.success("OK").withValue(asset).code(200);
+        if (assetInformation.getCip68Metadata() != null) {
+
+            asset.setOnchainMetadataExtra(objectMapper.writeValueAsString(assetInformation.getCip68Metadata()));
+        }
+        return asset;
     }
 
     @Override

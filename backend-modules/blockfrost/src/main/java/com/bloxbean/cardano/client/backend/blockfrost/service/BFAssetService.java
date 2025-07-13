@@ -37,6 +37,19 @@ public class BFAssetService extends BFBaseService implements AssetService {
     }
 
     @Override
+    public Result<List<Asset>> getAssetInformationBulk(List<String> units) throws ApiException {
+        List<Asset> assets = new ArrayList<>();
+        Result<Asset> assetResult = null;
+        for (String unit : units) {
+            assetResult = getAsset(unit);
+            if (assetResult.isSuccessful()) {
+                assets.add(assetResult.getValue());
+            }
+        }
+        return Result.success(assetResult.toString()).withValue(assets).code(assetResult.code());
+    }
+
+    @Override
     public Result<List<AssetAddress>> getAllAssetAddresses(String asset) throws ApiException {
         validateAsset(asset);
         List<AssetAddress> assetAddresses = new ArrayList<>();

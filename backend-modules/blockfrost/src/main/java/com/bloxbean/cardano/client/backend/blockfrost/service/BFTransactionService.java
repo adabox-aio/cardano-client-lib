@@ -6,19 +6,25 @@ import com.bloxbean.cardano.client.backend.api.TransactionService;
 import com.bloxbean.cardano.client.backend.blockfrost.service.http.TransactionApi;
 import com.bloxbean.cardano.client.api.model.EvaluationResult;
 import com.bloxbean.cardano.client.backend.model.*;
+import com.bloxbean.cardano.client.transaction.spec.Transaction;
 import com.bloxbean.cardano.client.util.HexUtil;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.jetbrains.annotations.NotNull;
 import retrofit2.Call;
 import retrofit2.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 
 public class BFTransactionService extends BFBaseService implements TransactionService {
 
-    private TransactionApi transactionApi;
+    private final TransactionApi transactionApi;
 
     public BFTransactionService(String baseUrl, String projectId) {
         super(baseUrl, projectId);
@@ -27,14 +33,11 @@ public class BFTransactionService extends BFBaseService implements TransactionSe
 
     @Override
     public Result<String> submitTransaction(byte[] cborData) throws ApiException {
-
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/cbor"), cborData);
-
         Call<String> txnCall = transactionApi.submit(getProjectId(), requestBody);
         try {
             Response<String> response = txnCall.execute();
             return processResponse(response);
-
         } catch (IOException e) {
             throw new ApiException("Error submit transaction", e);
         }
@@ -66,6 +69,71 @@ public class BFTransactionService extends BFBaseService implements TransactionSe
             }
         }
         return Result.success("OK").withValue(transactionContentList).code(200);
+    }
+
+    @Override
+    public Result<TransactionCbor> getTransactionCbor(String txnHash) throws ApiException {
+        Call<TransactionCbor> txnCall = transactionApi.getTransactionCbor(getProjectId(), txnHash);
+        try {
+            Response<TransactionCbor> response = txnCall.execute();
+            if (response.isSuccessful()) {
+                TransactionCbor transactionCbor = response.body();
+                Objects.requireNonNull(transactionCbor).setTxHash(txnHash);
+                return Result.success(response.toString()).withValue(transactionCbor).code(response.code());
+            } else {
+                return Result.error(response.errorBody().string()).code(response.code());
+            }
+        } catch (IOException e) {
+            throw new ApiException("Error getting transaction cbor for id : " + txnHash, e);
+        }
+    }
+
+    @Override
+    public Result<List<TransactionCbor>> getTransactionsCbor(List<String> txnHashes) throws ApiException {
+        List<CompletableFuture<TransactionCbor>> futures = txnHashes.stream()
+                .map(txnHash -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        Result<TransactionCbor> cborRes = getTransactionCbor(txnHash);
+                        Result<TransactionContent> contentRes = getTransaction(txnHash);
+                        Result<TxContentUtxo> utxoRes = getTransactionUtxos(txnHash);
+
+                        if (!cborRes.isSuccessful()) throw new ApiException(cborRes.getResponse());
+                        if (!contentRes.isSuccessful()) throw new ApiException(contentRes.getResponse());
+                        if (!utxoRes.isSuccessful()) throw new ApiException(utxoRes.getResponse());
+
+                        return buildTransactionCbor(cborRes, contentRes, utxoRes);
+                    } catch (ApiException e) {
+                        throw new CompletionException(e);
+                    }
+                })).collect(Collectors.toList());
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } catch (CompletionException ce) {
+            if (ce.getCause() instanceof ApiException) {
+                throw (ApiException) ce.getCause();
+            }
+            throw ce;
+        }
+
+        List<TransactionCbor> resultList = futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+
+        return Result.success("OK").withValue(resultList).code(200);
+    }
+
+    @NotNull
+    private static TransactionCbor buildTransactionCbor(Result<TransactionCbor> cborRes, Result<TransactionContent> contentRes, Result<TxContentUtxo> utxoRes) {
+        TransactionCbor tc = new TransactionCbor();
+        tc.setCbor(cborRes.getValue().getCbor());
+        tc.setBlockHash(contentRes.getValue().getBlock());
+        tc.setBlockHeight(contentRes.getValue().getBlockHeight());
+        tc.setAbsoluteSlot(cborRes.getValue().getAbsoluteSlot());
+        tc.setTxTimestamp(contentRes.getValue().getBlockTime());
+        tc.setTxSize(contentRes.getValue().getSize());
+        tc.setTxHash(cborRes.getValue().getTxHash());
+        tc.setUtxo(utxoRes.getValue());
+        return tc;
     }
 
     @Override

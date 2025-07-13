@@ -13,7 +13,6 @@ dependencies {
     api project(':function')
     api project(':cip')
     api project(':quicktx')
-
 }
 
 compileJava {
@@ -45,7 +44,7 @@ publishing {
             pom {
                 name = 'Cardano Client Library'
                 description = 'Cardano Client Library for Java'
-                url = 'https://github.com/bloxbean/cardano-client-lib'
+                url = 'https://github.com/Gero-Labs/gero-backend'
                 licenses {
                     license {
                         name = 'The MIT License'
@@ -59,25 +58,21 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/bloxbean/cardano-client-lib.git'
-                    developerConnection = 'scm:git:ssh://git@github.com/bloxbean/cardano-client-lib.git'
-                    url = 'https://github.com/bloxbean/cardano-client-lib'
+                    connection = 'scm:git:git://github.com/Gero-Labs/gero-backend.git'
+                    developerConnection = 'scm:git:ssh://git@github.com:Gero-Labs/gero-backend.git'
+                    url = 'https://github.com/Gero-Labs/gero-backend'
                 }
             }
         }
     }
 
     repositories {
-        String ossrhUsername = System.getenv('MAVEN_USERNAME')
-        String ossrhPassword = System.getenv('MAVEN_PASSWORD')
-
         maven {
-            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/Gero-Labs/gero-backend')
             credentials {
-                username ossrhUsername
-                password ossrhPassword
+                username = System.getenv('GITHUB_ACTOR') ?: (project.findProperty('gpr.user') ?: '')
+                password = System.getenv('GITHUB_TOKEN') ?: (project.findProperty('gpr.key') ?: '')
             }
         }
     }
@@ -100,7 +95,6 @@ subprojects {
         mavenCentral()
     }
 
-    //Jars are with cardano-client prefix
     archivesBaseName = 'cardano-client-' + project.name
 
     dependencies {
@@ -139,7 +133,6 @@ subprojects {
     }
 
     task javadocJar(type: Jar, dependsOn: javadoc) {
-
         classifier "javadoc"
         from javadoc.destinationDir
     }
@@ -194,61 +187,27 @@ subprojects {
         integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     }
 
-    if (!name.equalsIgnoreCase("integration-test")) {
-        publishing {
-            publications {
-                mavenJava(MavenPublication) {
-                    from components.java
-                    artifact(sourceJar) {
-                        classifier = 'sources'
-                    }
-                    artifact(javadocJar) {
-                        classifier = 'javadoc'
-                    }
-                    artifactId 'cardano-client-' + project.name
-                    pom {
-//                    name = publish_name
-//                    description = publish_desc
-                        url = 'https://github.com/bloxbean/cardano-client-lib'
-                        licenses {
-                            license {
-                                name = 'The MIT License'
-                                url = 'https://opensource.org/licenses/mit-license.php'
-                            }
-                        }
-                        developers {
-                            developer {
-                                id = 'satran004'
-                                name = 'Satya'
-                            }
-                        }
-                        scm {
-                            connection = 'scm:git:git://github.com/bloxbean/cardano-client-lib.git'
-                            developerConnection = 'scm:git:ssh://git@github.com/bloxbean/cardano-client-lib.git'
-                            url = 'https://github.com/bloxbean/cardano-client-lib'
-                        }
-                    }
-                }
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                artifact(sourceJar) { classifier = 'sources' }
+                artifact(javadocJar) { classifier = 'javadoc' }
+                artifactId 'cardano-client-' + project.name
             }
+        }
 
-            repositories {
-                String ossrhUsername = System.getenv('MAVEN_USERNAME')
-                String ossrhPassword = System.getenv('MAVEN_PASSWORD')
-
-                maven {
-                    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-                    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                    credentials {
-                        username ossrhUsername
-                        password ossrhPassword
-                    }
+        repositories {
+            maven {
+                name = 'GitHubPackages'
+                url = uri('https://maven.pkg.github.com/Gero-Labs/gero-backend')
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR') ?: (project.findProperty('gpr.user') ?: '')
+                    password = System.getenv('GITHUB_TOKEN') ?: (project.findProperty('gpr.key') ?: '')
                 }
             }
         }
     }
-
-    ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
     if (isReleaseVersion && !project.hasProperty("skipSigning")) {
         signing {

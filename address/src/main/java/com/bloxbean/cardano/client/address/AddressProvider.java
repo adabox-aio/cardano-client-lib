@@ -616,10 +616,10 @@ public class AddressProvider {
         Objects.requireNonNull(address, "address cannot be null");
         if (isPubKeyHashInPaymentPart(address)) {
             return getPaymentCredentialHash(address)
-                    .map(hash -> Credential.fromKey(hash));
+                    .map(Credential::fromKey);
         } else if (isScriptHashInPaymentPart(address)) {
             return getPaymentCredentialHash(address)
-                    .map(hash -> Credential.fromScript(hash));
+                    .map(Credential::fromScript);
         }  else {
             return Optional.empty();
         }

@@ -1,5 +1,7 @@
 package com.bloxbean.cardano.client.api.model;
 
+import com.bloxbean.cardano.client.api.exception.ApiException;
+
 public class Result<T> {
     boolean successful;
     String response;
@@ -63,6 +65,17 @@ public class Result<T> {
 
     public int code() {
         return this.code;
+    }
+
+    /**
+     * @throws ApiException if this Result represents an error
+     */
+    public T unwrap() throws ApiException {
+        if (!isSuccessful()) {
+            // you can pass through your stored error message / code
+            throw new ApiException("Return Code: " + code() + ", Response: "+getResponse());
+        }
+        return getValue();
     }
 
     @Override
