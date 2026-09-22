@@ -7,13 +7,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PlutusOps {
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static List<String> V1_OPS;
     private static List<String> V2_OPS;
     private static List<String> V3_OPS;
 
     //According to Conway Chang HF - Sept 2024
-    private static String PLUTUS_V1_COSTS = "{\n" +
+    private static final String PLUTUS_V1_COSTS = "{\n" +
             "  \"addInteger-cpu-arguments-intercept\" : 100788,\n" +
             "  \"addInteger-cpu-arguments-slope\" : 420,\n" +
             "  \"addInteger-memory-arguments-intercept\" : 1,\n" +

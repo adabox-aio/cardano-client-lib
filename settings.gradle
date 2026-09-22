@@ -32,6 +32,7 @@ include 'backend-modules'
 include 'backend-modules:blockfrost'
 include 'backend-modules:koios'
 include 'backend-modules:ogmios'
+include 'backend-modules:nexus'
 include 'integration-test'
 
 //supplier modules

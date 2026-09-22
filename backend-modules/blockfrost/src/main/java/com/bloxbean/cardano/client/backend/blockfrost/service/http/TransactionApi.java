@@ -15,6 +15,9 @@ public interface TransactionApi {
     @GET("txs/{hash}")
     Call<TransactionContent> getTransaction(@Header("project_id")  String projectId, @Path("hash") String txnHash);
 
+    @GET("txs/{hash}/cbor")
+    Call<TransactionCbor> getTransactionCbor(@Header("project_id")  String projectId, @Path("hash") String txnHash);
+
     @GET("txs/{hash}/utxos")
     Call<TxContentUtxo> getTransactionUtxos(@Header("project_id")  String projectId, @Path("hash") String txnHash);
 

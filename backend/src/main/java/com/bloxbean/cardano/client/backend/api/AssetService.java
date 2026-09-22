@@ -19,6 +19,16 @@ public interface AssetService {
     Result<Asset> getAsset(String unit) throws ApiException;
 
     /**
+     * Asset Information (Bulk)
+     * Get List of assets
+     *
+     * @param units List Concatenation of the policy_id and hex-encoded asset_name
+     * @return Result of Type List of {@link Asset}
+     * @throws ApiException if an error occurs while attempting to invoke the API
+     */
+    Result<List<Asset>> getAssetInformationBulk(List<String> units) throws ApiException;
+
+    /**
      * Asset addresses
      * List of addresses containing a specific asset
      *

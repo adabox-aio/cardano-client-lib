@@ -880,7 +880,7 @@ public class UtxoTransactionBuilderTest {
         String receiver = "addr_test1qqwpl7h3g84mhr36wpetk904p7fchx2vst0z696lxk8ujsjyruqwmlsm344gfux3nsj6njyzj3ppvrqtt36cp9xyydzqzumz82";
         Account sender = new Account(Networks.testnet());
 
-        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Collections.singletonList(new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null));
+        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Collections.singletonList(new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null, null));
         given(utxoSupplier.getPage(anyString(), anyInt(), eq(0), any())).willReturn(utxos);
 
 
@@ -911,7 +911,7 @@ public class UtxoTransactionBuilderTest {
 
         String unit = "777777d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7";
 
-        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("3")))), null, null, null));
+        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("3")))), null, null, null, null));
         given(utxoSupplier.getPage(anyString(), anyInt(), eq(0), any())).willReturn(utxos);
 
         PaymentTransaction paymentTransaction = PaymentTransaction.builder()
@@ -942,7 +942,7 @@ public class UtxoTransactionBuilderTest {
 
         String unit = "777777d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7";
 
-        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null));
+        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null, null));
         given(utxoSupplier.getPage(anyString(), anyInt(), eq(0), any())).willReturn(utxos);
 
 
@@ -982,7 +982,7 @@ public class UtxoTransactionBuilderTest {
 
         String unit = "777777d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7";
 
-        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null));
+        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, ADAConversionUtil.adaToLovelace(new BigDecimal("1.5")))), null, null, null, null));
         given(utxoSupplier.getPage(anyString(), anyInt(), eq(0), any())).willReturn(utxos);
 
         PaymentTransaction paymentTransaction1 = PaymentTransaction.builder()
@@ -1018,7 +1018,7 @@ public class UtxoTransactionBuilderTest {
 
         String unit = "777777d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7";
 
-        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, BigInteger.valueOf(2478633))), null, null, null));
+        List<Utxo> utxos = Collections.singletonList(new Utxo("496760b59ba36169bf6a62b09880824896b8e0044a4893f9649b6604741a89ed", 3, sender.getBaseAddress().getAddress(), Arrays.asList(new Amount(unit, BigInteger.valueOf(1000)), new Amount(LOVELACE, BigInteger.valueOf(2478633))), null, null, null, null));
         given(utxoSupplier.getPage(anyString(), anyInt(), eq(0), any())).willReturn(utxos);
 
         PaymentTransaction paymentTransaction1 = PaymentTransaction.builder()
