@@ -2,6 +2,7 @@ dependencies {
     api project(':backend-modules:blockfrost')
     api project(':backend-modules:koios')
     api project(':backend-modules:ogmios')
+    api project(':backend-modules:nexus')
 }
 
 publishing {
@@ -9,7 +10,7 @@ publishing {
         mavenJava(MavenPublication) {
             pom {
                 name = 'Cardano Client Backend Modules'
-                description = 'Cardano Client Lib - Backend Modules (Blockfrost, Koios, Ogmios)'
+                description = 'Cardano Client Lib - Backend Modules (Blockfrost, Koios, Ogmios, Nexus)'
             }
         }
     }
